@@ -1,1 +1,180 @@
-index.html
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Clima</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+:root {
+  --bg: #ffffff;
+  --text: #202124;
+  --sub: #5f6368;
+  --card: #f1f3f4;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #202124;
+    --text: #e8eaed;
+    --sub: #9aa0a6;
+    --card: #2d2e30;
+  }
+}
+
+body {
+  margin: 0;
+  background: transparent;
+  font-family: "Google Sans", system-ui, -apple-system, BlinkMacSystemFont;
+}
+
+.widget {
+  background: var(--bg);
+  color: var(--text);
+  border-radius: 16px;
+  padding: 18px;
+  max-width: 320px;
+  box-shadow: 0 1px 3px rgba(60,64,67,.3),
+              0 4px 8px rgba(60,64,67,.15);
+  animation: fade .6s ease;
+}
+
+.city {
+  font-size: 14px;
+  color: var(--sub);
+}
+
+.main {
+  display: flex;
+  align-items: center;
+  margin: 8px 0 4px;
+}
+
+.icon {
+  font-size: 48px;
+  margin-right: 8px;
+  animation: float 3s ease-in-out infinite;
+}
+
+.temp {
+  font-size: 48px;
+  font-weight: 500;
+}
+
+.desc {
+  font-size: 14px;
+  color: var(--sub);
+  margin-bottom: 12px;
+}
+
+.forecast {
+  display: flex;
+  justify-content: space-between;
+}
+
+.day {
+  text-align: center;
+  font-size: 12px;
+  color: var(--sub);
+  opacity: 0;
+  transform: translateY(6px);
+  animation: slide .5s forwards;
+}
+
+.day:nth-child(1){animation-delay:.15s}
+.day:nth-child(2){animation-delay:.3s}
+.day:nth-child(3){animation-delay:.45s}
+.day:nth-child(4){animation-delay:.6s}
+
+.study {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--sub);
+}
+
+@keyframes fade {
+  from {opacity:0; transform:scale(.96)}
+  to {opacity:1; transform:scale(1)}
+}
+
+@keyframes slide {
+  to {opacity:1; transform:translateY(0)}
+}
+
+@keyframes float {
+  0%,100%{transform:translateY(0)}
+  50%{transform:translateY(-5px)}
+}
+</style>
+</head>
+
+<body>
+
+<div class="widget">
+  <div class="city">Bom Jesus das Selvas – MA</div>
+
+  <div class="main">
+    <div class="icon" id="icon">☀️</div>
+    <div class="temp" id="temp">--°</div>
+  </div>
+
+  <div class="desc" id="desc">Carregando clima…</div>
+
+  <div class="forecast" id="forecast"></div>
+
+  <div class="study">
+    📚 Clima ideal para manter o foco hoje
+  </div>
+</div>
+
+<script>
+const lat = -4.4766;
+const lon = -46.8666;
+
+fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&daily=weathercode,temperature_2m_max&timezone=auto`)
+.then(r => r.json())
+.then(d => {
+  animateTemp(d.current_weather.temperature);
+  setIcon(d.current_weather.weathercode);
+
+  const days = ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
+  const f = document.getElementById("forecast");
+
+  d.daily.time.slice(0,4).forEach((date,i)=>{
+    f.innerHTML += `
+      <div class="day">
+        <div>${days[new Date(date).getDay()]}</div>
+        <div>${iconByCode(d.daily.weathercode[i])}</div>
+        <strong>${Math.round(d.daily.temperature_2m_max[i])}°</strong>
+      </div>`;
+  });
+});
+
+function animateTemp(target){
+  let c = 0;
+  const end = Math.round(target);
+  const el = document.getElementById("temp");
+  const i = setInterval(()=>{
+    el.innerText = c + "°";
+    if(c >= end) clearInterval(i);
+    c++;
+  },18);
+}
+
+function setIcon(code){
+  document.getElementById("icon").innerText = iconByCode(code);
+  document.getElementById("desc").innerText =
+    code < 3 ? "Ensolarado"
+    : code < 50 ? "Nublado"
+    : "Chuva";
+}
+
+function iconByCode(code){
+  if(code < 3) return "☀️";
+  if(code < 50) return "☁️";
+  return "🌧️";
+}
+</script>
+
+</body>
+</html>
